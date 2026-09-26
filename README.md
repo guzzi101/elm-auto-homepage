@@ -1,6 +1,6 @@
 # Elm Auto homepage
 
-Responsive homepage client preview for Elm Auto, with the real logo, vehicle category selector, 13-photo customer slider, and application links to Elm Auto’s existing website.
+Responsive homepage client preview for Elm Auto, with the real logo, vehicle category selector, customer photo slider, and application links to Elm Auto’s existing website.
 
 ## Development
 
