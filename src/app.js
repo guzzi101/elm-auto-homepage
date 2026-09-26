@@ -64,7 +64,6 @@ function chooseVehicle(key, focus = false) {
   });
   $('#vehicle-stage').setAttribute('aria-labelledby', `tab-${key}`);
   $('#vehicle-label').textContent = vehicles[key].label;
-  $('#photo-number').textContent = String(vehicleKeys.indexOf(key) + 1).padStart(2, '0');
   $('#mobile-vehicle').textContent = vehicles[key].summary;
   positionIndicator(changed);
   if (changed && !reduced()) {
@@ -145,12 +144,7 @@ try {
     const base = 1 / customerCards.length;
     galleryProgress.style.transform = `scaleX(${base + progress * (1 - base)})`;
   }
-  function announceGallery() {
-    const snaps = gallery.internalEngine().slideRegistry;
-    const index = snaps[gallery.selectedScrollSnap()]?.[0] ?? 0;
-    $('#gallery-position').textContent = `Photo ${index + 1} of ${customerCards.length}`;
-  }
-  gallery.on('scroll', updateGallery).on('select', announceGallery).on('reInit', updateGallery)
+  gallery.on('scroll', updateGallery).on('select', updateGallery).on('reInit', updateGallery)
     .on('pointerDown', () => viewport.classList.add('is-dragging'))
     .on('pointerUp', () => viewport.classList.remove('is-dragging'));
   updateGallery();
@@ -184,8 +178,6 @@ if (reviewsViewport) {
     if (!reviews) return;
     reviewsBack.disabled = !reviews.canScrollPrev();
     reviewsForward.disabled = !reviews.canScrollNext();
-    const index = reviews.internalEngine().slideRegistry[reviews.selectedScrollSnap()]?.[0] ?? 0;
-    $('#reviews-position').textContent = `Review ${index + 1} of ${reviewCards.length}`;
   }
   try {
     reviews = EmblaCarousel(reviewsViewport, { align: 'start', containScroll: 'trimSnaps', loop: false, duration: reduced() ? 0 : 28 });

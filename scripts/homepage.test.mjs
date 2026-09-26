@@ -53,6 +53,8 @@ test('compiled homepage has valid links, loaded assets and no visible credits', 
   const ids = [...document.querySelectorAll('[id]')].map(el => el.id);
   assert.equal(new Set(ids).size, ids.length);
   assert.equal(document.querySelector('.photo-credits'), null);
+  assert.doesNotMatch(html, /Lethbridge|(?:Photo|Review) \d+ of \d+/i);
+  assert.equal(document.querySelector('#photo-number, #gallery-position, #reviews-position'), null);
   assert.doesNotMatch(document.body.textContent, /Photography credits|Unsplash|Your next chapter|Great handovers/);
   assert.match(document.querySelector('.hero-reassurance').textContent, /Good, bad or no credit/);
   assert.doesNotMatch(document.body.textContent, /\bElm\b(?! Auto)|\bELM\b/);
@@ -75,7 +77,7 @@ test('vehicle tabs support clicking, keyboard traversal, touch swiping and ARIA 
   assert.equal(document.querySelector('.vehicle-photo.active').dataset.photo, 'work');
   assert.equal(document.querySelector('#tab-work').getAttribute('aria-selected'), 'true');
   assert.equal(document.querySelector('#vehicle-stage').getAttribute('aria-labelledby'), 'tab-work');
-  assert.equal(document.querySelector('#photo-number').textContent, '02');
+  assert.equal(document.querySelector('#vehicle-label').textContent, 'A truck that works as hard as you.');
   document.querySelector('#tab-work').dispatchEvent(new window.KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
   assert.equal(document.activeElement.id, 'tab-commute');
   assert.equal(document.querySelectorAll('[role=tab][tabindex="0"]').length, 1);
@@ -100,9 +102,9 @@ test('customer slider navigates without photo buttons or popups', () => {
   assert.equal(document.querySelector('#gallery-back').disabled, true);
   assert.equal(document.querySelector('#gallery-forward').disabled, false);
   document.querySelector('#gallery-forward').click();
-  assert.notEqual(document.querySelector('#gallery-position').textContent, `Photo 1 of ${cards.length}`);
+  assert.equal(document.querySelector('#gallery-back').disabled, false);
   document.querySelector('#photo-reel').dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Home', bubbles: true }));
-  assert.equal(document.querySelector('#gallery-position').textContent, `Photo 1 of ${cards.length}`);
+  assert.equal(document.querySelector('#gallery-back').disabled, true);
   assert.equal(errors.length, 0);
   dom.window.close();
 });
@@ -114,13 +116,13 @@ test('Google review slider moves independently with buttons and keyboard', () =>
   assert.equal(document.querySelectorAll('.review-card').length, 3);
   assert.equal(document.querySelector('#reviews-back').disabled, true);
   document.querySelector('#reviews-forward').click();
-  assert.equal(document.querySelector('#reviews-position').textContent, 'Review 2 of 3');
-  assert.equal(document.querySelector('#gallery-position').textContent, 'Photo 1 of 13');
+  assert.equal(document.querySelector('#reviews-back').disabled, false);
+  assert.equal(document.querySelector('#gallery-back').disabled, true);
   viewport.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'End', bubbles: true }));
-  assert.equal(document.querySelector('#reviews-position').textContent, 'Review 3 of 3');
   assert.equal(document.querySelector('#reviews-forward').disabled, true);
   viewport.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Home', bubbles: true }));
-  assert.equal(document.querySelector('#reviews-position').textContent, 'Review 1 of 3');
+  assert.equal(document.querySelector('#reviews-back').disabled, true);
+  assert.equal(document.querySelector('#reviews-forward').disabled, false);
   assert.equal(document.querySelectorAll('.review-card blockquote[cite="https://www.elmautocredit.ca/"]').length, 3);
   assert.equal(errors.length, 0);
   dom.window.close();
