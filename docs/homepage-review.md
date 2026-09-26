@@ -28,3 +28,11 @@ Calculated contrast: white on the main green button 5.25:1; muted body text on w
 Browser review used Chromium responsive frames, not physical phones or a separate Safari engine. Review excerpts remain a manually maintained snapshot. This review verifies design and behavior; it does not establish a measured conversion-rate lift.
 
 The temporary `_review.html` route is removed after validation. `scripts/responsive-review.html` remains a development helper; copy it beside `dist/index.html` only when a hosted responsive review is needed, and remove that copy before final delivery.
+
+## Follow-up: consistent gallery sizing
+
+Removed the staggered customer-photo widths, vertical offsets and portrait-specific aspect ratio. Every card now shares a 4:3 frame and the same width within each breakpoint. CSS focal positions preserve the people in the portrait and square source images. Original image files are unchanged.
+
+Replaced text-glyph carousel arrows with the same mirrored SVG. Customer and review arrows all render in fixed 48×48px buttons with 22×22px icons, zero padding and no flex shrinking. Disabled arrows retain their dimensions and use a muted colour.
+
+Verified the computed card dimensions and arrow geometry at 320, 390, 768 and 1440px. Every customer frame matched its neighbours, with zero top margin and no horizontal page overflow. Inspected phone and desktop views and the portrait crop; navigation and existing tests pass.
