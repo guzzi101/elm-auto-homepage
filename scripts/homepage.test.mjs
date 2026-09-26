@@ -138,8 +138,16 @@ test('mobile menu closes on Escape and sticky CTA follows section visibility', (
   assert.equal(document.activeElement, menu);
   const hero = observers.find(observer => observer.targets.includes(document.querySelector('.hero')));
   const end = observers.find(observer => observer.targets.includes(document.querySelector('.application-panel')));
+  const inline = observers.find(observer => observer.targets.includes(document.querySelector('#customer-apply')));
   hero.callback([{ isIntersecting: false }]);
   assert.ok(document.querySelector('.mobile-apply').classList.contains('show'));
+  assert.equal(document.querySelector('.mobile-apply').inert, false);
+  inline.callback([{ target: document.querySelector('#customer-apply'), isIntersecting: true }]);
+  assert.equal(document.querySelector('.mobile-apply').inert, true);
+  inline.callback([{ target: document.querySelector('#process-apply'), isIntersecting: true }]);
+  inline.callback([{ target: document.querySelector('#customer-apply'), isIntersecting: false }]);
+  assert.equal(document.querySelector('.mobile-apply').inert, true);
+  inline.callback([{ target: document.querySelector('#process-apply'), isIntersecting: false }]);
   assert.equal(document.querySelector('.mobile-apply').inert, false);
   end.callback([{ isIntersecting: true }]);
   assert.equal(document.querySelector('.mobile-apply').inert, true);

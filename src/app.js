@@ -34,6 +34,10 @@ const indicator = $('.tab-indicator');
 function positionIndicator(animateChange = true) {
   const button = $(`[data-vehicle="${currentVehicle}"]`);
   const x = button.offsetLeft + button.offsetWidth * .15;
+  const tabs = button.parentElement;
+  if (button.offsetLeft < tabs.scrollLeft || button.offsetLeft + button.offsetWidth > tabs.scrollLeft + tabs.clientWidth) {
+    tabs.scrollTo({ left: Math.max(0, button.offsetLeft - (tabs.clientWidth - button.offsetWidth) / 2), behavior: reduced() ? 'instant' : 'smooth' });
+  }
   stopMotion(indicatorTransition);
   indicator.style.width = `${button.offsetWidth * .7}px`;
   if (!animateChange || reduced()) indicator.style.transform = `translateX(${x}px)`;
@@ -223,11 +227,20 @@ if (!reduced()) {
 let heroVisible = true;
 let applicationVisible = false;
 const mobileBar = $('.mobile-apply');
+const visibleApplyLinks = new Set();
 function updateMobileBar() {
-  const show = !heroVisible && !applicationVisible;
+  const show = !heroVisible && !applicationVisible && visibleApplyLinks.size === 0;
   mobileBar.classList.toggle('show', show);
   mobileBar.inert = !show;
 }
+const inlineApplyObserver = new IntersectionObserver(entries => {
+  for (const entry of entries) {
+    if (entry.isIntersecting) visibleApplyLinks.add(entry.target);
+    else visibleApplyLinks.delete(entry.target);
+  }
+  updateMobileBar();
+}, { threshold: 0 });
+$$('main a[href="https://www.elmautocredit.ca/get-approved/"]').forEach(link => inlineApplyObserver.observe(link));
 new IntersectionObserver(entries => { heroVisible = entries[0].isIntersecting; updateMobileBar(); }).observe($('.hero'));
 new IntersectionObserver(entries => { applicationVisible = entries[0].isIntersecting; updateMobileBar(); }).observe($('.application-panel'));
 let scrollQueued = false;
