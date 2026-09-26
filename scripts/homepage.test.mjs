@@ -13,7 +13,7 @@ function page(reduced = true) {
   const dom = new JSDOM(html, { url: 'https://example.test/', runScripts: 'outside-only', pretendToBeVisual: true, virtualConsole: vc });
   const { window } = dom;
   const browserDefaults = window.document.createElement('style');
-  browserDefaults.textContent = 'button, .customer-photo { margin: 0; }';
+  browserDefaults.textContent = 'button, .customer-photo, .review-card { margin: 0; }';
   window.document.head.append(browserDefaults);
   const observers = [];
   window.matchMedia = query => ({ matches: query.includes('prefers-reduced-motion') && reduced, media: query, addListener() {}, removeListener() {}, addEventListener() {}, removeEventListener() {} });
@@ -32,14 +32,14 @@ function page(reduced = true) {
     if (this.matches('[data-vehicle]')) return 85;
     if (this.matches('#photo-reel')) return 390;
     if (this.matches('.photo-reel')) return 390;
-    if (this.matches('.customer-photo')) return 320;
+    if (this.matches('.customer-photo, .review-card')) return 320;
     return 390;
   }});
   Object.defineProperty(window.HTMLElement.prototype, 'offsetHeight', { get() { return 260; } });
   Object.defineProperty(window.HTMLElement.prototype, 'offsetTop', { get() { return 0; } });
   Object.defineProperty(window.HTMLElement.prototype, 'offsetLeft', { get() {
     if (this.matches('[data-vehicle]')) return [...this.parentElement.querySelectorAll('[data-vehicle]')].indexOf(this) * 85;
-    if (this.matches('.customer-photo')) return [...this.parentElement.children].indexOf(this) * 338;
+    if (this.matches('.customer-photo, .review-card')) return [...this.parentElement.children].indexOf(this) * 338;
     return 0;
   }});
   window.HTMLElement.prototype.getBoundingClientRect = function () { return { x: this.offsetLeft, y: 0, left: this.offsetLeft, top: 0, width: this.offsetWidth, height: 260, right: this.offsetLeft + this.offsetWidth, bottom: 260 }; };
@@ -55,6 +55,7 @@ test('compiled homepage has valid links, loaded assets and no visible credits', 
   assert.equal(document.querySelector('.photo-credits'), null);
   assert.doesNotMatch(document.body.textContent, /Photography credits|Unsplash|Your next chapter|Great handovers/);
   assert.match(document.querySelector('.hero-reassurance').textContent, /Good, bad or no credit/);
+  assert.doesNotMatch(document.body.textContent, /\bElm\b(?! Auto)|\bELM\b/);
   for (const el of document.querySelectorAll('[src]')) {
     const src = el.getAttribute('src');
     if (src && !src.startsWith('http')) assert.ok(existsSync(`dist/${src.split('?')[0]}`), src);
@@ -102,6 +103,25 @@ test('customer slider navigates without photo buttons or popups', () => {
   assert.notEqual(document.querySelector('#gallery-position').textContent, `Photo 1 of ${cards.length}`);
   document.querySelector('#photo-reel').dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Home', bubbles: true }));
   assert.equal(document.querySelector('#gallery-position').textContent, `Photo 1 of ${cards.length}`);
+  assert.equal(errors.length, 0);
+  dom.window.close();
+});
+
+test('Google review slider moves independently with buttons and keyboard', () => {
+  const { window, document, dom, errors } = page();
+  const viewport = document.querySelector('#reviews-reel');
+  assert.ok(viewport.classList.contains('is-enhanced'));
+  assert.equal(document.querySelectorAll('.review-card').length, 3);
+  assert.equal(document.querySelector('#reviews-back').disabled, true);
+  document.querySelector('#reviews-forward').click();
+  assert.equal(document.querySelector('#reviews-position').textContent, 'Review 2 of 3');
+  assert.equal(document.querySelector('#gallery-position').textContent, 'Photo 1 of 13');
+  viewport.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'End', bubbles: true }));
+  assert.equal(document.querySelector('#reviews-position').textContent, 'Review 3 of 3');
+  assert.equal(document.querySelector('#reviews-forward').disabled, true);
+  viewport.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Home', bubbles: true }));
+  assert.equal(document.querySelector('#reviews-position').textContent, 'Review 1 of 3');
+  assert.equal(document.querySelectorAll('.review-card blockquote[cite="https://www.elmautocredit.ca/"]').length, 3);
   assert.equal(errors.length, 0);
   dom.window.close();
 });

@@ -174,6 +174,44 @@ viewport.addEventListener('keydown', event => {
   else moveGallery(event.key === 'ArrowRight' ? 1 : -1);
 });
 
+const reviewsViewport = $('#reviews-reel');
+const reviewCards = $$('.review-card');
+const reviewsBack = $('#reviews-back');
+const reviewsForward = $('#reviews-forward');
+let reviews;
+if (reviewsViewport) {
+  function updateReviews() {
+    if (!reviews) return;
+    reviewsBack.disabled = !reviews.canScrollPrev();
+    reviewsForward.disabled = !reviews.canScrollNext();
+    const index = reviews.internalEngine().slideRegistry[reviews.selectedScrollSnap()]?.[0] ?? 0;
+    $('#reviews-position').textContent = `Review ${index + 1} of ${reviewCards.length}`;
+  }
+  try {
+    reviews = EmblaCarousel(reviewsViewport, { align: 'start', containScroll: 'trimSnaps', loop: false, duration: reduced() ? 0 : 28 });
+    reviewsViewport.classList.add('is-enhanced');
+    reviews.on('select', updateReviews).on('reInit', updateReviews)
+      .on('pointerDown', () => reviewsViewport.classList.add('is-dragging'))
+      .on('pointerUp', () => reviewsViewport.classList.remove('is-dragging'));
+    updateReviews();
+  } catch {
+    reviewsViewport.classList.remove('is-enhanced');
+  }
+  function moveReview(direction) {
+    if (reviews) direction > 0 ? reviews.scrollNext(reduced()) : reviews.scrollPrev(reduced());
+    else reviewsViewport.scrollBy({ left: direction * reviewCards[0].getBoundingClientRect().width, behavior: reduced() ? 'auto' : 'smooth' });
+  }
+  reviewsBack.addEventListener('click', () => moveReview(-1));
+  reviewsForward.addEventListener('click', () => moveReview(1));
+  reviewsViewport.addEventListener('keydown', event => {
+    if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+    event.preventDefault();
+    if (event.key === 'Home') reviews ? reviews.scrollTo(0, reduced()) : reviewsViewport.scrollTo({ left: 0 });
+    else if (event.key === 'End') reviews ? reviews.scrollTo(reviews.scrollSnapList().length - 1, reduced()) : reviewsViewport.scrollTo({ left: reviewsViewport.scrollWidth });
+    else moveReview(event.key === 'ArrowRight' ? 1 : -1);
+  });
+}
+
 const steps = $$('.step');
 function highlightStep(index) {
   steps.forEach((step, i) => step.classList.toggle('is-current', i === index));
@@ -212,5 +250,6 @@ window.addEventListener('scroll', () => {
 motionPreference.addEventListener('change', () => {
   if (reduced()) running.forEach(animation => animation.complete());
   gallery?.reInit({ duration: reduced() ? 0 : 28 });
+  reviews?.reInit({ duration: reduced() ? 0 : 28 });
   positionIndicator(false);
 });
