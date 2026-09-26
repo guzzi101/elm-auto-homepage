@@ -63,7 +63,7 @@ test('compiled homepage has valid links, loaded assets and no visible credits', 
     if (link.hash) assert.ok(document.getElementById(link.hash.slice(1)), link.hash);
   }
   for (const el of document.querySelectorAll('[aria-controls]')) assert.ok(document.getElementById(el.getAttribute('aria-controls')));
-  for (const link of document.querySelectorAll('.hero-apply, .header-apply, #final-apply, .mobile-apply a')) assert.equal(link.href, 'https://www.elmautocredit.ca/get-approved/');
+  for (const link of document.querySelectorAll('a[href*="get-approved"]')) assert.equal(link.href, 'https://www.elmautocredit.ca/get-approved/');
   transform({ filename: 'style.css', code: readFileSync('dist/style.css'), errorRecovery: false });
   dom.window.close();
 });
