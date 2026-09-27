@@ -3,6 +3,33 @@ import { animate, inView, stagger } from 'motion';
 
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
+const applicationUrl = 'https://www.elmautocredit.ca/get-approved/';
+const applicationLinks = $$(`a[href="${applicationUrl}"]`);
+// Carry only campaign attribution to Elm Auto's application; never copy the full query.
+const campaignKeys = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_id', 'utm_term', 'utm_content', 'gclid', 'gbraid', 'wbraid', 'fbclid', 'msclkid'];
+const landingParams = new URLSearchParams(window.location.search);
+applicationLinks.forEach(link => {
+  const destination = new URL(applicationUrl);
+  campaignKeys.forEach(key => {
+    const value = landingParams.get(key);
+    if (value && value.length <= 512 && !/[\u0000-\u001f\u007f]/.test(value)) destination.searchParams.set(key, value);
+  });
+  link.href = destination.href;
+});
+// Integration hooks only: no analytics vendor, cookies, or network requests are added.
+function track(event, details = {}) {
+  window.dataLayer = window.dataLayer || [];
+  window.dataLayer.push({ event, ...details });
+}
+applicationLinks.forEach(link => link.addEventListener('click', () => {
+  track('elm_apply_click', { cta_location: link.dataset.placement || 'unknown' });
+}));
+$$('a[href^="tel:"]').forEach(link => link.addEventListener('click', () => {
+  track('elm_phone_click', { cta_location: link.dataset.placement || 'unknown' });
+}));
+$$('.question-list details').forEach(question => question.addEventListener('toggle', () => {
+  if (question.open) track('elm_faq_open', { question_id: question.dataset.question });
+}));
 const motionPreference = window.matchMedia('(prefers-reduced-motion: reduce)');
 const reduced = () => motionPreference.matches;
 const ease = [0.22, 1, 0.36, 1];
@@ -118,12 +145,14 @@ function closeMenu() {
   nav.classList.remove('open');
   menu.setAttribute('aria-expanded', 'false');
   menu.setAttribute('aria-label', 'Open navigation');
+  updateMobileBar();
 }
 menu.addEventListener('click', () => {
   const open = !nav.classList.contains('open');
   nav.classList.toggle('open', open);
   menu.setAttribute('aria-expanded', String(open));
   menu.setAttribute('aria-label', open ? 'Close navigation' : 'Open navigation');
+  updateMobileBar();
   if (open && !reduced()) motion(nav.querySelectorAll('a'), { opacity: [.25, 1], y: [8, 0] }, { delay: stagger(.04), duration: .3 });
 });
 nav.addEventListener('click', event => { if (event.target.closest('a')) closeMenu(); });
@@ -224,25 +253,27 @@ if (!reduced()) {
   }, { amount: .15 });
 }
 
-let heroVisible = true;
-let applicationVisible = false;
+let heroActionPassed = false;
 const mobileBar = $('.mobile-apply');
 const visibleApplyLinks = new Set();
 function updateMobileBar() {
-  const show = !heroVisible && !applicationVisible && visibleApplyLinks.size === 0;
+  const show = heroActionPassed && visibleApplyLinks.size === 0 && !nav.classList.contains('open');
   mobileBar.classList.toggle('show', show);
   mobileBar.inert = !show;
 }
 const inlineApplyObserver = new IntersectionObserver(entries => {
   for (const entry of entries) {
-    if (entry.isIntersecting) visibleApplyLinks.add(entry.target);
+    if (entry.isIntersecting && entry.intersectionRatio >= .65) visibleApplyLinks.add(entry.target);
     else visibleApplyLinks.delete(entry.target);
   }
   updateMobileBar();
-}, { threshold: 0 });
-$$('main a[href="https://www.elmautocredit.ca/get-approved/"]').forEach(link => inlineApplyObserver.observe(link));
-new IntersectionObserver(entries => { heroVisible = entries[0].isIntersecting; updateMobileBar(); }).observe($('.hero'));
-new IntersectionObserver(entries => { applicationVisible = entries[0].isIntersecting; updateMobileBar(); }).observe($('.application-panel'));
+}, { threshold: [0, .65, 1] });
+applicationLinks.filter(link => link.closest('main')).forEach(link => inlineApplyObserver.observe(link));
+new IntersectionObserver(entries => {
+  const entry = entries[0];
+  heroActionPassed = entry.boundingClientRect.bottom <= 0;
+  updateMobileBar();
+}, { threshold: 0 }).observe($('.hero-apply'));
 let scrollQueued = false;
 function updateReadingProgress() {
   const max = document.documentElement.scrollHeight - window.innerHeight;

@@ -6,11 +6,11 @@ import { transform } from 'lightningcss';
 const html = readFileSync('dist/index.html', 'utf8');
 const bundle = readFileSync('dist/app.js', 'utf8');
 
-function page(reduced = true) {
+function page(reduced = true, url = 'https://example.test/') {
   const errors = [];
   const vc = new VirtualConsole();
   vc.on('jsdomError', error => errors.push(error));
-  const dom = new JSDOM(html, { url: 'https://example.test/', runScripts: 'outside-only', pretendToBeVisual: true, virtualConsole: vc });
+  const dom = new JSDOM(html, { url, runScripts: 'outside-only', pretendToBeVisual: true, virtualConsole: vc });
   const { window } = dom;
   const browserDefaults = window.document.createElement('style');
   browserDefaults.textContent = 'button, .customer-photo, .review-card { margin: 0; }';
@@ -136,25 +136,63 @@ test('mobile menu closes on Escape and sticky CTA follows section visibility', (
   document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape' }));
   assert.equal(menu.getAttribute('aria-expanded'), 'false');
   assert.equal(document.activeElement, menu);
-  const hero = observers.find(observer => observer.targets.includes(document.querySelector('.hero')));
-  const end = observers.find(observer => observer.targets.includes(document.querySelector('.application-panel')));
+  const hero = observers.find(observer => observer.targets.length === 1 && observer.targets.includes(document.querySelector('.hero-apply')));
   const inline = observers.find(observer => observer.targets.includes(document.querySelector('#customer-apply')));
-  hero.callback([{ isIntersecting: false }]);
+  hero.callback([{ isIntersecting: false, boundingClientRect: { bottom: 1000 } }]);
+  assert.equal(document.querySelector('.mobile-apply').inert, true, 'do not cover a hero CTA still below the fold');
+  hero.callback([{ isIntersecting: false, boundingClientRect: { bottom: -1 } }]);
   assert.ok(document.querySelector('.mobile-apply').classList.contains('show'));
   assert.equal(document.querySelector('.mobile-apply').inert, false);
-  inline.callback([{ target: document.querySelector('#customer-apply'), isIntersecting: true }]);
+  inline.callback([{ target: document.querySelector('#customer-apply'), isIntersecting: true, intersectionRatio: .1 }]);
+  assert.equal(document.querySelector('.mobile-apply').inert, false, 'a clipped CTA must not hide the usable mobile button');
+  inline.callback([{ target: document.querySelector('#customer-apply'), isIntersecting: true, intersectionRatio: .8 }]);
   assert.equal(document.querySelector('.mobile-apply').inert, true);
-  inline.callback([{ target: document.querySelector('#process-apply'), isIntersecting: true }]);
+  inline.callback([{ target: document.querySelector('#process-apply'), isIntersecting: true, intersectionRatio: 1 }]);
   inline.callback([{ target: document.querySelector('#customer-apply'), isIntersecting: false }]);
   assert.equal(document.querySelector('.mobile-apply').inert, true);
   inline.callback([{ target: document.querySelector('#process-apply'), isIntersecting: false }]);
   assert.equal(document.querySelector('.mobile-apply').inert, false);
-  end.callback([{ isIntersecting: true }]);
+  menu.click();
+  assert.equal(document.querySelector('.mobile-apply').inert, true, 'the menu has its own application action');
+  menu.click();
+  assert.equal(document.querySelector('.mobile-apply').inert, false);
+  inline.callback([{ target: document.querySelector('#final-apply'), isIntersecting: true, intersectionRatio: 1 }]);
   assert.equal(document.querySelector('.mobile-apply').inert, true);
   const stepObserver = observers.find(observer => observer.targets.includes(document.querySelector('.step')));
   stepObserver.callback([{ target: document.querySelectorAll('.step')[2], isIntersecting: true }]);
   assert.equal(document.querySelector('#process-index').textContent, '03');
   assert.equal(errors.length, 0);
+  dom.window.close();
+});
+
+test('paid campaign attribution reaches application links without forwarding unrelated parameters', () => {
+  const { document, dom, errors } = page(true, 'https://example.test/?utm_source=google&utm_medium=cpc&utm_campaign=alberta%20vehicles&gclid=test-click-123&email=private%40example.com&redirect=https%3A%2F%2Fwrong.test');
+  for (const link of document.querySelectorAll('a[href*="get-approved"]')) {
+    const destination = new URL(link.href);
+    assert.equal(destination.origin + destination.pathname, 'https://www.elmautocredit.ca/get-approved/');
+    assert.equal(destination.searchParams.get('utm_source'), 'google');
+    assert.equal(destination.searchParams.get('utm_campaign'), 'alberta vehicles');
+    assert.equal(destination.searchParams.get('gclid'), 'test-click-123');
+    assert.equal(destination.searchParams.has('email'), false);
+    assert.equal(destination.searchParams.has('redirect'), false);
+  }
+  assert.equal(document.querySelector('.hero-support a[href^="tel:"]').href, 'tel:+14033283039');
+  assert.equal(errors.length, 0);
+  dom.window.close();
+});
+
+test('conversion hooks distinguish intent from leads and do not include URL or form data', () => {
+  const { window, document, dom } = page();
+  const apply = document.querySelector('.hero-apply');
+  apply.addEventListener('click', event => event.preventDefault());
+  apply.click();
+  assert.deepEqual(JSON.parse(JSON.stringify(window.dataLayer[0])), { event: 'elm_apply_click', cta_location: 'hero' });
+  const phone = document.querySelector('.hero-support a[href^="tel:"]');
+  phone.addEventListener('click', event => event.preventDefault());
+  phone.click();
+  assert.deepEqual(JSON.parse(JSON.stringify(window.dataLayer[1])), { event: 'elm_phone_click', cta_location: 'hero' });
+  assert.ok(window.dataLayer.every(entry => !('email' in entry) && !('page_location' in entry) && !('gclid' in entry)));
+  assert.ok(window.dataLayer.every(entry => entry.event !== 'generate_lead'));
   dom.window.close();
 });
 
