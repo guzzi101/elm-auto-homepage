@@ -9,7 +9,7 @@ let full=false, large=false, noScripts=false, campaign=false;
 function home(){return document.querySelector('#page').value==='home'}
 function report(){try{const root=frame.contentDocument.documentElement;document.querySelector('#status').textContent=root.clientWidth+'px content / '+root.scrollWidth+'px page';}catch{document.querySelector('#status').textContent='Application preview';}}
 function size(){frame.style.width=document.querySelector('#width').value+'px';frame.style.height=document.querySelector('#height').value+'px';try{if(full&&home())frame.style.height=frame.contentDocument.documentElement.scrollHeight+'px';}catch{}setTimeout(report,150);}
-function load(){frame.src=home()?'./index.html'+(campaign?'?utm_source=qa&utm_medium=test&utm_campaign=journey-audit&gclid=qa-click':''):'https://www.elmautocredit.ca/get-approved/';}
+function load(){frame.src=home()?'./index.html?review='+Date.now()+(campaign?'&utm_source=qa&utm_medium=test&utm_campaign=journey-audit&gclid=qa-click':''):'https://www.elmautocredit.ca/get-approved/';}
 document.querySelector('#width').addEventListener('change',size);
 document.querySelector('#height').addEventListener('change',size);
 document.querySelector('#page').addEventListener('change',()=>{if(!home()){frame.removeAttribute('sandbox');noScripts=false;document.querySelector('#scripts').setAttribute('aria-pressed','false');}load()});

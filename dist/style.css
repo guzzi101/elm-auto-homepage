@@ -42,3 +42,8 @@
 .footer small a{display:inline-flex;align-items:center;min-height:44px;text-decoration:underline;text-underline-offset:3px}
 @media(max-width:760px){.hero-copy{padding-bottom:18px}.hero-reassurance{margin-top:10px;font-size:.9375rem}.hero-apply{margin-top:18px}.apply-note{font-size:.8125rem}.hero-support{margin-top:7px}.hero-support a{font-size:.875rem}.vehicle-footnote{margin-bottom:24px}}
 @media(min-width:761px) and (max-width:1100px){.header nav{flex-wrap:wrap;justify-content:flex-end;gap:4px 20px}.header{min-height:100px;height:auto;padding-top:12px;padding-bottom:12px}.header nav .nav-apply{display:block;color:#076c52;font-weight:800}}
+/* Keep ordinary button labels on one line on narrow phones; allow enlarged text to wrap. */
+@media(max-width:760px){.button{gap:16px;padding-left:20px;padding-right:20px}}
+/* Native content and scrolling remain useful when JavaScript is unavailable. */
+html:not(.motion-ready) .menu-toggle,html:not(.motion-ready) .vehicle-tabs,html:not(.motion-ready) .gallery-controls{display:none}
+.gallery-viewport:not(.is-enhanced),.gallery-viewport:not(.is-enhanced) .photo-reel,.reviews-viewport:not(.is-enhanced),.reviews-viewport:not(.is-enhanced) .reviews-track{touch-action:auto}
