@@ -113,7 +113,7 @@ test('Google review slider moves independently with buttons and keyboard', () =>
   const { window, document, dom, errors } = page();
   const viewport = document.querySelector('#reviews-reel');
   assert.ok(viewport.classList.contains('is-enhanced'));
-  assert.equal(document.querySelectorAll('.review-card').length, 3);
+  assert.equal(document.querySelectorAll('.review-card').length, 6);
   assert.equal(document.querySelector('#reviews-back').disabled, true);
   document.querySelector('#reviews-forward').click();
   assert.equal(document.querySelector('#reviews-back').disabled, false);
@@ -123,7 +123,7 @@ test('Google review slider moves independently with buttons and keyboard', () =>
   viewport.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Home', bubbles: true }));
   assert.equal(document.querySelector('#reviews-back').disabled, true);
   assert.equal(document.querySelector('#reviews-forward').disabled, false);
-  assert.equal(document.querySelectorAll('.review-card blockquote[cite="https://www.elmautocredit.ca/"]').length, 3);
+  assert.equal(document.querySelectorAll('.review-card blockquote[cite]').length, 6);
   assert.equal(errors.length, 0);
   dom.window.close();
 });
